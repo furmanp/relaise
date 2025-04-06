@@ -24,14 +24,28 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		repoPath, err := os.Getwd()
 		if err != nil {
-			log.Fatal("Failed to get current working directory:", err)
-		}
-		tagSha, err := services.GetLatestTagSha(repoPath)
-		if err != nil {
-			fmt.Println("Failed to get latest tag SHA:", err)
+			log.Fatalf("Failed to get current working directory: %v", err)
 		}
 
-		fmt.Printf("Latest tag SHA: %s\n", tagSha)
+		repo, err := services.GetGitRepository(repoPath)
+		if err != nil {
+			log.Fatalf("Failed to open Git repository: %v", err)
+		}
+
+		tag, err := services.GetLatestSemanticTag(repo)
+		if err != nil {
+			log.Fatalf("Failed to get latest annotated semver tag: %v", err)
+		}
+
+		messages, err := services.GetCommitMessagesSinceLastTag(repo, tag)
+		if err != nil {
+			log.Fatalf("Failed to get commit messages since tag: %v", err)
+		}
+
+		fmt.Printf("Changes since %s:\n", tag.Name)
+		for _, msg := range messages {
+			fmt.Println("•", msg)
+		}
 	},
 }
 

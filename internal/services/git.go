@@ -3,6 +3,7 @@ package services
 import (
 	"fmt"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/plumbing/storer"
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
@@ -10,12 +11,15 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 )
 
-func GetLatestTagSha(repoPath string) (*object.Tag, error) {
+func GetGitRepository(repoPath string) (*git.Repository, error) {
 	repo, err := git.PlainOpen(repoPath)
 	if err != nil {
 		return nil, fmt.Errorf("no Git repository found in '%s': %w", repoPath, err)
 	}
+	return repo, nil
+}
 
+func GetLatestSemanticTag(repo *git.Repository) (*object.Tag, error) {
 	tags, err := repo.Tags()
 	if err != nil {
 		return nil, fmt.Errorf("error fetching tags: %w", err)
@@ -57,4 +61,46 @@ func GetLatestTagSha(repoPath string) (*object.Tag, error) {
 	fmt.Println("Points to commit SHA:", latestSemanticTag.Target.String())
 
 	return latestSemanticTag, nil
+}
+
+func GetCommitMessagesSinceLastTag(repo *git.Repository, lastTag *object.Tag) ([]string, error) {
+	commit, err := repo.CommitObject(lastTag.Target)
+
+	if err != nil {
+		return nil, fmt.Errorf("error getting commit associated with provided Tag: %w", err)
+	}
+
+	head, err := repo.Head()
+
+	if err != nil {
+		return nil, fmt.Errorf("error getting HEAD: %w", err)
+	}
+
+	headCommit, err := repo.CommitObject(head.Hash())
+
+	if err != nil {
+		return nil, fmt.Errorf("error getting HEAD commit: %w", err)
+
+	}
+
+	commitIter, err := repo.Log(&git.LogOptions{Order: git.LogOrderCommitterTime, From: headCommit.Hash})
+	if err != nil {
+		return nil, fmt.Errorf("error fetching commit log: %w", err)
+	}
+
+	var commitMessages []string
+	err = commitIter.ForEach(func(c *object.Commit) error {
+		if c.Hash == commit.Hash {
+			return storer.ErrStop
+		}
+		commitMessages = append(commitMessages, c.Message)
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("error iterating over commits: %w", err)
+	}
+
+	return commitMessages, nil
 }
