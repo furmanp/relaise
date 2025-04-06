@@ -32,20 +32,19 @@ to quickly create a Cobra application.`,
 			log.Fatalf("Failed to open Git repository: %v", err)
 		}
 
-		tag, err := services.GetLatestSemanticTag(repo)
+		commitSummary, err := services.GetReleasePayload(repo)
+
 		if err != nil {
-			log.Fatalf("Failed to get latest annotated semver tag: %v", err)
+			log.Fatalf("Failed to get commit summary: %v", err)
 		}
 
-		messages, err := services.GetCommitMessagesSinceLastTag(repo, tag)
+		releaseNotes, err := services.GeneratePrompt(commitSummary.TagName, commitSummary.Messages)
+
 		if err != nil {
-			log.Fatalf("Failed to get commit messages since tag: %v", err)
+			log.Fatalf("Failed to generate release notes: %v", err)
 		}
 
-		fmt.Printf("Changes since %s:\n", tag.Name)
-		for _, msg := range messages {
-			fmt.Println("•", msg)
-		}
+		fmt.Printf(releaseNotes)
 	},
 }
 

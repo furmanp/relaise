@@ -11,6 +11,11 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 )
 
+type ReleasePayload struct {
+	TagName  string
+	Messages []string
+}
+
 func GetGitRepository(repoPath string) (*git.Repository, error) {
 	repo, err := git.PlainOpen(repoPath)
 	if err != nil {
@@ -58,8 +63,6 @@ func GetLatestSemanticTag(repo *git.Repository) (*object.Tag, error) {
 		return nil, fmt.Errorf("no valid annotated semver tags found")
 	}
 
-	fmt.Println("Points to commit SHA:", latestSemanticTag.Target.String())
-
 	return latestSemanticTag, nil
 }
 
@@ -103,4 +106,21 @@ func GetCommitMessagesSinceLastTag(repo *git.Repository, lastTag *object.Tag) ([
 	}
 
 	return commitMessages, nil
+}
+
+func GetReleasePayload(repo *git.Repository) (*ReleasePayload, error) {
+	latestTag, err := GetLatestSemanticTag(repo)
+	if err != nil {
+		return nil, fmt.Errorf("error getting latest semantic tag: %w", err)
+	}
+
+	commitMessages, err := GetCommitMessagesSinceLastTag(repo, latestTag)
+	if err != nil {
+		return nil, fmt.Errorf("error getting commit messages since last tag: %w", err)
+	}
+
+	return &ReleasePayload{
+		TagName:  latestTag.Name,
+		Messages: commitMessages,
+	}, nil
 }
