@@ -9,7 +9,7 @@ import (
 	"github.com/teilomillet/gollm"
 )
 
-func GeneratePrompt(tagName string, commitMessages []string) (string, error) {
+func GeneratePrompt(tagName string, commitMessages []string, mood string) (string, error) {
 	cfg, err := LoadConfig()
 	if err != nil {
 		fmt.Printf("relaise config file not created yet. Run `relaise config --api-key AI_API_KEY`.\n")
@@ -39,7 +39,7 @@ func GeneratePrompt(tagName string, commitMessages []string) (string, error) {
 	promptText += fmt.Sprintf("\n Based on the amount of changes, propose next Tag Name following the release guidelines: %s\n", tagName)
 
 	prompt := gollm.NewPrompt(promptText,
-		gollm.WithDirectives("Be brief and professional", "Don't use any emojis", "Use bullet points"))
+		gollm.WithDirectives("Be brief and professional", "Don't use any emojis", "Use bullet points", fmt.Sprintf("make the response %s", mood)))
 
 	response, err := llm.Generate(ctx, prompt)
 

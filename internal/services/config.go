@@ -8,15 +8,14 @@ import (
 )
 
 type Config struct {
-	APIKey string `yaml:"api_key"`
-	// Provider string `yaml:"provider"`
-	// Model    string `yaml:"model"`
-	// Mood     string `yaml:"mood"`
-	// ReleaseType string `yaml:"release_type"` // minor, major, patch
-	//ReleaseType string `yaml:"release_type"` // "markdown", "plain", "html"
-	//BulletStyle string `yaml:"bullet_style"` // "*", "-", or numbered
-	//IncludeSections bool `yaml:"include_sections"` // Features, Fixes, etc.
-	//Language string `yaml:"language"` // e.g., "en", "fr", "es"
+	APIKey          string `yaml:"api_key"`
+	Provider        string `yaml:"provider"`
+	Model           string `yaml:"model"`
+	Mood            string `yaml:"mood"`
+	ReleaseType     string `yaml:"release_type"`     // minor, major, patch
+	BulletStyle     string `yaml:"bullet_style"`     // "*", "-", or numbered
+	IncludeSections bool   `yaml:"include_sections"` // Features, Fixes, etc.
+	Language        string `yaml:"language"`         // e.g., "en", "fr", "es"
 }
 
 func getConfigPath() (string, error) {

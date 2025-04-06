@@ -5,12 +5,15 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/spf13/pflag"
 	"log"
 	"os"
 
 	"github.com/furmanp/relaise/internal/services"
 	"github.com/spf13/cobra"
 )
+
+var sessionConfig services.Config
 
 var rootCmd = &cobra.Command{
 	Use:   "relaise",
@@ -22,6 +25,20 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		cfg, err := services.LoadConfig()
+		if err != nil || cfg == nil {
+			cfg = &services.Config{}
+		}
+
+		cmd.Flags().Visit(func(f *pflag.Flag) {
+			switch f.Name {
+			case "mood":
+				cfg.Mood = sessionConfig.Mood
+			case "include-sections":
+				cfg.IncludeSections = sessionConfig.IncludeSections
+			}
+		})
+
 		repoPath, err := os.Getwd()
 		if err != nil {
 			log.Fatalf("Failed to get current working directory: %v", err)
@@ -38,7 +55,7 @@ to quickly create a Cobra application.`,
 			log.Fatalf("Failed to get commit summary: %v", err)
 		}
 
-		releaseNotes, err := services.GeneratePrompt(commitSummary.TagName, commitSummary.Messages)
+		releaseNotes, err := services.GeneratePrompt(commitSummary.TagName, commitSummary.Messages, cfg.Mood)
 
 		if err != nil {
 			log.Fatalf("Failed to generate release notes: %v", err)
@@ -56,13 +73,6 @@ func Execute() {
 }
 
 func init() {
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-
-	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.relaise.yaml)")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.PersistentFlags().StringVar(&sessionConfig.Mood, "mood", "professional", "Set the tone for the release notes")
 }
