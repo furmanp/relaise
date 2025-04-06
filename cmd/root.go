@@ -4,8 +4,11 @@ Copyright © 2025 furmanp <przemek@furmanp.com>
 package cmd
 
 import (
+	"fmt"
+	"log"
 	"os"
 
+	"github.com/furmanp/relaise/internal/services"
 	"github.com/spf13/cobra"
 )
 
@@ -18,13 +21,20 @@ examples and usage of using your application. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	// Run: func(cmd *cobra.Command, args []string) { },
+	Run: func(cmd *cobra.Command, args []string) {
+		repoPath, err := os.Getwd()
+		if err != nil {
+			log.Fatal("Failed to get current working directory:", err)
+		}
+		tagSha, err := services.GetLatestTagSha(repoPath)
+		if err != nil {
+			fmt.Println("Failed to get latest tag SHA:", err)
+		}
+
+		fmt.Printf("Latest tag SHA: %s\n", tagSha)
+	},
 }
 
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	err := rootCmd.Execute()
 	if err != nil {
