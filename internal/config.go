@@ -1,4 +1,4 @@
-package services
+package internal
 
 import (
 	"os"
@@ -6,17 +6,6 @@ import (
 
 	"gopkg.in/yaml.v3"
 )
-
-type Config struct {
-	APIKey          string `yaml:"api_key"`
-	Provider        string `yaml:"provider"`
-	Model           string `yaml:"model"`
-	Mood            string `yaml:"mood"`
-	ReleaseType     string `yaml:"release_type"`     // minor, major, patch
-	BulletStyle     string `yaml:"bullet_style"`     // "*", "-", or numbered
-	IncludeSections bool   `yaml:"include_sections"` // Features, Fixes, etc.
-	Language        string `yaml:"language"`         // e.g., "en", "fr", "es"
-}
 
 func getConfigPath() (string, error) {
 	home, err := os.UserHomeDir()
@@ -62,4 +51,19 @@ func SaveConfig(cfg *Config) error {
 	}
 
 	return os.WriteFile(path, data, 0644)
+}
+
+func DefaultConfig() *Config {
+	return &Config{
+		APIKey:          "",
+		Provider:        "mistral",
+		Model:           "mistral-small-latest",
+		Mood:            "professional",
+		ReleaseType:     "minor",
+		BulletStyle:     "-",
+		IncludeSections: false,
+		Language:        "en",
+		Emojis:          false,
+		Copy:            false,
+	}
 }
