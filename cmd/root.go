@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/atotto/clipboard"
 	"github.com/furmanp/relaise/internal/services"
 	"github.com/spf13/cobra"
 )
@@ -91,6 +92,12 @@ var rootCmd = &cobra.Command{
 		}
 
 		fmt.Printf(releaseNotes)
+		if prompt.Copy {
+			err := clipboard.WriteAll(releaseNotes)
+			if err != nil {
+				log.Fatalf("Failed to copy release notes to clipboard: %v", err)
+			}
+		}
 	},
 }
 

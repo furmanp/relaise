@@ -20,7 +20,7 @@ Relaise is a CLI tool that automatically generates release notes by analyzing yo
    *   Use of emojis
    *   Release type context (major, minor, patch) for version bumping hints.
 *   **Simple Configuration:** Manage settings easily using the `relaise config` command, saving preferences to `~/.relaise/config.yaml`.
-*   **Clipboard Integration:** Optionally copy the generated notes directly to your clipboard. (WIP)
+*   **Clipboard Integration:** Optionally copy the generated notes directly to your clipboard. 
 
 ## Installation
 
