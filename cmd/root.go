@@ -97,7 +97,7 @@ var rootCmd = &cobra.Command{
 			return fmt.Errorf("failed to generate release notes: %w", err)
 		}
 
-		fmt.Printf(releaseNotes)
+		fmt.Printf("%s\n", releaseNotes)
 
 		if prompt.Copy {
 			err := clipboard.WriteAll(releaseNotes)

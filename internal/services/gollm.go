@@ -37,7 +37,7 @@ func getAdditionalConstraints(prompt internal.NotesPrompt) []string {
 	}
 
 	if prompt.ReleaseType != "" {
-		constraints = append(constraints, fmt.Sprintf("This is a %s release. Adjust the semantic version accordingly.", prompt.ReleaseType))
+		constraints = append(constraints, fmt.Sprintf("This is a %s release. Provide the appropriate next tag number from: %s.", prompt.ReleaseType, prompt.TagName))
 	}
 
 	if prompt.BulletStyle != "" {
@@ -86,7 +86,7 @@ func GeneratePrompt(notestPrompt internal.NotesPrompt) (string, error) {
 	ctx := context.Background()
 
 	systemPrompt := getSystemPrompt()
-	promptText := fmt.Sprintf("Generate a release notes for %s, based on the following commit messages:\n\n", notestPrompt.TagName)
+	promptText := fmt.Sprintf("Generate a release notes, based on the following commit messages:\n\n")
 
 	for _, msg := range notestPrompt.Context {
 		promptText += "- " + msg + "\n"
