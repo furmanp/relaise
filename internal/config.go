@@ -65,5 +65,7 @@ func DefaultConfig() *Config {
 		Language:        "en",
 		Emojis:          false,
 		Copy:            false,
+		Temperature:     0.3,
+		MaxTokens:       1000,
 	}
 }

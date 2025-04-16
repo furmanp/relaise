@@ -1,11 +1,5 @@
 package internal
 
-type Commit struct {
-	ID          string
-	Message     string
-	AuthoreDate string
-}
-
 type Config struct {
 	APIKey          string `yaml:"api_key"`
 	Provider        string `yaml:"provider"`
@@ -17,6 +11,8 @@ type Config struct {
 	Language        string `yaml:"language"`
 	Emojis          bool
 	Copy            bool
+	MaxTokens       int     `yaml:"max_tokens"`
+	Temperature     float64 `yaml:"temperature"`
 }
 
 type NotesPrompt struct {

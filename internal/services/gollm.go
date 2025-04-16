@@ -63,18 +63,13 @@ func getAdditionalConstraints(prompt internal.NotesPrompt) []string {
 }
 
 func GeneratePrompt(notestPrompt internal.NotesPrompt) (string, error) {
-	cfg, err := internal.LoadConfig()
-	if err != nil {
-		fmt.Printf("AI API Key not provided. Run `relaise config --api-key AI_API_KEY`.\n")
-		return "", err
-	}
 
 	llm, err := gollm.NewLLM(
-		gollm.SetProvider(cfg.Provider),
-		gollm.SetModel(cfg.Model),
-		gollm.SetAPIKey(cfg.APIKey),
-		gollm.SetTemperature(0.3),
-		gollm.SetMaxTokens(1000),
+		gollm.SetProvider(notestPrompt.Provider),
+		gollm.SetModel(notestPrompt.Model),
+		gollm.SetAPIKey(notestPrompt.APIKey),
+		gollm.SetTemperature(notestPrompt.Temperature),
+		gollm.SetMaxTokens(notestPrompt.MaxTokens),
 		gollm.SetMaxRetries(3),
 		gollm.SetRetryDelay(time.Second*2),
 		gollm.SetLogLevel(gollm.LogLevelError))
