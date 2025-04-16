@@ -1,8 +1,5 @@
 # Relaise
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/furmanp/relaise)](https://goreportcard.com/report/github.com/furmanp/relaise)
-
-
 **AI-Powered Release Notes Generator**
 
 Relaise is a CLI tool that automatically generates release notes by analyzing your Git commit history since the last annotated semantic version tag (e.g., `v1.2.3`). It uses AI to transform your commit messages into polished, human-readable release notes based on your preferences.
