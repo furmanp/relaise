@@ -1,5 +1,7 @@
 # Relaise
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/furmanp/relaise)](https://goreportcard.com/report/github.com/furmanp/relaise)
+
 
 **AI-Powered Release Notes Generator**
 
