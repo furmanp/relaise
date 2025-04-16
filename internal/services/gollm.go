@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/furmanp/relaise/internal"
-	"log"
 	"time"
 
 	"github.com/teilomillet/gollm"
@@ -78,10 +77,10 @@ func GeneratePrompt(notestPrompt internal.NotesPrompt) (string, error) {
 		gollm.SetMaxTokens(1000),
 		gollm.SetMaxRetries(3),
 		gollm.SetRetryDelay(time.Second*2),
-		gollm.SetLogLevel(gollm.LogLevelInfo))
+		gollm.SetLogLevel(gollm.LogLevelError))
 
 	if err != nil {
-		log.Fatalf("Failed to create LLM client: %v", err)
+		return "", fmt.Errorf("failed to create LLM client: %w", err)
 	}
 
 	ctx := context.Background()
@@ -101,7 +100,7 @@ func GeneratePrompt(notestPrompt internal.NotesPrompt) (string, error) {
 	response, err := llm.Generate(ctx, prompt)
 
 	if err != nil {
-		log.Fatalf("Failed to generate response: %v", err)
+		return "", fmt.Errorf("failed to generate response: %w", err)
 	}
 	return response, nil
 }

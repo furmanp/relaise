@@ -12,7 +12,7 @@ var config internal.Config
 var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Set up or update the configuration for relaise.",
-	Long: `The 'config' command allows you to set up or modify the configuration used by Relaise.
+	Long: `The 'config' command allows you to set up or modify the configuration used by relaise.
 	This includes selecting the AI provider, model, release note tone, language, formatting style, and more.
 
 	Configuration is saved to a YAML file in your home directory ('~/.relaise/config.yaml')
@@ -23,7 +23,7 @@ var configCmd = &cobra.Command{
 	relaise config --provider mistral --model mistral-medium --language en --emojis
 
 	This ensures consistent behavior across runs without needing to specify flags every time.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		existing, _ := internal.LoadConfig()
 		if existing == nil {
 			existing = internal.DefaultConfig()
@@ -56,24 +56,24 @@ var configCmd = &cobra.Command{
 
 		err := internal.SaveConfig(existing)
 		if err != nil {
-			fmt.Printf("Failed to save config: %v\n", err)
-			return
+			return fmt.Errorf("failed to save config: %w", err)
 		}
 
-		fmt.Println("Configuration saved successfully.")
+		fmt.Println("Configuration saved successfully to ~/.relaise/config.yaml")
+		return nil
 	}}
 
 func init() {
-	configCmd.Flags().StringVar(&config.APIKey, "api-key", "", "API key for LLM provider")
-	configCmd.Flags().StringVar(&config.Language, "language", "en", "Language you want the release notes to be generated in")
-	configCmd.Flags().StringVar(&config.Provider, "provider", "mistral", "AI Service provider")
-	configCmd.Flags().StringVar(&config.Model, "model", "mistral-small-latest", "Model to use")
-	configCmd.Flags().StringVar(&config.BulletStyle, "bullet-style", "-", "Styling for the release notes")
-	configCmd.Flags().StringVar(&config.ReleaseType, "release-type", "minor", "Type of release: minor/major/patch")
-	configCmd.Flags().StringVar(&config.Mood, "mood", "professional", "Set the tone for the release notes")
-	configCmd.Flags().BoolVar(&config.IncludeSections, "include-sections", false, "Sections to include in the release notes (true/false")
-	configCmd.Flags().BoolVar(&config.Emojis, "use-emojis", false, "Use emojis in the release notes (true/false)")
-	configCmd.Flags().BoolVar(&config.Copy, "copy", false, "Copy the release notes to clipboard (true/false)")
+	configCmd.Flags().StringVarP(&config.APIKey, "api-key", "k", "", "API key for LLM provider")
+	configCmd.Flags().StringVarP(&config.Language, "language", "l", "en", "Language for release notes (default)")
+	configCmd.Flags().StringVarP(&config.Provider, "provider", "p", "mistral", "AI Service provider (e.g., mistral, openai)")
+	configCmd.Flags().StringVarP(&config.Model, "model", "M", "mistral-small-latest", "Default model to use")
+	configCmd.Flags().StringVarP(&config.BulletStyle, "bullet-style", "s", "-", "Default bullet style for lists (e.g., '-', '*')")
+	configCmd.Flags().StringVarP(&config.ReleaseType, "release-type", "t", "minor", "Default release type hint (minor/major/patch)")
+	configCmd.Flags().StringVarP(&config.Mood, "mood", "m", "professional", "Default tone for the release notes")
+	configCmd.Flags().BoolVarP(&config.IncludeSections, "include-sections", "i", false, "Default setting for including sections")
+	configCmd.Flags().BoolVarP(&config.Emojis, "emojis", "e", false, "Default setting for using emojis")
+	configCmd.Flags().BoolVarP(&config.Copy, "copy", "c", false, "Default setting for copying notes to clipboard")
 
 	rootCmd.AddCommand(configCmd)
 }

@@ -1,13 +1,9 @@
-/*
-Copyright © 2025 furmanp <przemek@furmanp.com>
-*/
 package cmd
 
 import (
 	"fmt"
 	"github.com/furmanp/relaise/internal"
 	"github.com/spf13/pflag"
-	"log"
 	"os"
 
 	"github.com/atotto/clipboard"
@@ -38,14 +34,19 @@ var rootCmd = &cobra.Command{
 				relaise --release-type patch --language fr --include-sections --emojis
 
 			Relaise automatically detects your Git repository and collects commits since the last version tag.`,
-	Run: func(cmd *cobra.Command, args []string) {
+
+	RunE: func(cmd *cobra.Command, args []string) error {
 
 		cfg, err := internal.LoadConfig()
 		if err != nil {
-			log.Fatalf("AI API Key not provided. Run `relaise config --api-key AI_API_KEY`.\n")
+			return fmt.Errorf("failed to load configuration (~/.relaise/config.yaml): %w\nRun 'relaise config --api-key YOUR_API_KEY'", err)
 		}
 
-		prompt := internal.MapConfigToPrompt(*cfg)
+		if cfg.APIKey == "" {
+			return fmt.Errorf("AI API Key not found in configuration. Please set it using 'relaise config --api-key YOUR_API_KEY'")
+		}
+
+		prompt := internal.NotesPrompt{Config: *cfg}
 
 		cmd.Flags().Visit(func(f *pflag.Flag) {
 			switch f.Name {
@@ -69,35 +70,43 @@ var rootCmd = &cobra.Command{
 
 		repoPath, err := os.Getwd()
 		if err != nil {
-			log.Fatalf("Failed to get current working directory: %v", err)
+			return fmt.Errorf("failed to get current working directory: %w", err)
 		}
 
 		repo, err := services.GetGitRepository(repoPath)
 		if err != nil {
-			log.Fatalf("Failed to open Git repository: %v", err)
+			return fmt.Errorf("failed to open Git repository: %w", err)
 		}
 
 		commitSummary, err := services.GetReleasePayload(repo)
+
+		if err != nil {
+			return fmt.Errorf("failed to get commit summary: %w", err)
+		}
+
 		prompt.TagName = commitSummary.TagName
 		prompt.Context = commitSummary.Messages
 
-		if err != nil {
-			log.Fatalf("Failed to get commit summary: %v", err)
+		if len(prompt.Context) == 0 {
+			fmt.Printf("No new commits found since tag %s. No release notes to generate.\n", prompt.TagName)
+			return nil
 		}
 
 		releaseNotes, err := services.GeneratePrompt(prompt)
-
 		if err != nil {
-			log.Fatalf("Failed to generate release notes: %v", err)
+			return fmt.Errorf("failed to generate release notes: %w", err)
 		}
 
 		fmt.Printf(releaseNotes)
+
 		if prompt.Copy {
 			err := clipboard.WriteAll(releaseNotes)
 			if err != nil {
-				log.Fatalf("Failed to copy release notes to clipboard: %v", err)
+				return fmt.Errorf("failed to copy release notes to clipboard: %v", err)
 			}
+			fmt.Printf("\nRelease notes copied to clipboard.\n")
 		}
+		return nil
 	},
 }
 
@@ -109,13 +118,15 @@ func Execute() {
 }
 
 func init() {
+	rootCmd.SilenceUsage = true
+
 	rootCmd.Flags().BoolP("help", "h", false, "Help")
-	rootCmd.PersistentFlags().StringVar(&sessionConfig.Mood, "mood", "professional", "Set the tone for the release notes")
-	rootCmd.PersistentFlags().StringVar(&sessionConfig.BulletStyle, "style", "*", "Define the bullet style for the release notes")
-	rootCmd.PersistentFlags().StringVar(&sessionConfig.ReleaseType, "release-type", "minor", "Define the release type")
-	rootCmd.PersistentFlags().StringVar(&sessionConfig.Language, "language", "en", "Define the language for the release notes")
-	rootCmd.PersistentFlags().BoolVar(&sessionConfig.IncludeSections, "include-sections", false, "Include sections in the release notes")
-	rootCmd.PersistentFlags().BoolVar(&sessionConfig.Emojis, "emojis", false, "Use emojis in the release notes")
-	rootCmd.PersistentFlags().BoolVar(&sessionConfig.Copy, "copy", false, "Copy the release notes to clipboard")
+	rootCmd.PersistentFlags().StringVarP(&sessionConfig.Mood, "mood", "m", "professional", "Set the tone for the release notes")
+	rootCmd.PersistentFlags().StringVarP(&sessionConfig.BulletStyle, "bullet-style", "s", "-", "Define the bullet style for the release notes")
+	rootCmd.PersistentFlags().StringVarP(&sessionConfig.ReleaseType, "release-type", "t", "minor", "Define the release type (major, minor, patch)")
+	rootCmd.PersistentFlags().StringVarP(&sessionConfig.Language, "language", "l", "en", "Define the language for the release notes")
+	rootCmd.PersistentFlags().BoolVarP(&sessionConfig.IncludeSections, "include-sections", "i", false, "Include structured sections (Features, Fixes, etc.)")
+	rootCmd.PersistentFlags().BoolVarP(&sessionConfig.Emojis, "emojis", "e", false, "Use relevant emojis in the release notes")
+	rootCmd.PersistentFlags().BoolVarP(&sessionConfig.Copy, "copy", "c", false, "Copy the generated release notes to the clipboard")
 
 }

@@ -32,6 +32,7 @@ func GetLatestSemanticTag(repo *git.Repository) (*object.Tag, error) {
 
 	var latestVersion *semver.Version
 	var latestSemanticTag *object.Tag
+	foundTag := false
 
 	err = tags.ForEach(func(ref *plumbing.Reference) error {
 		tagObj, err := repo.TagObject(ref.Hash())
@@ -41,8 +42,8 @@ func GetLatestSemanticTag(repo *git.Repository) (*object.Tag, error) {
 
 		tagName := ref.Name().Short()
 		verStr := strings.TrimPrefix(tagName, "v")
-
 		v, err := semver.NewVersion(verStr)
+
 		if err != nil {
 			return nil
 		}
@@ -50,6 +51,7 @@ func GetLatestSemanticTag(repo *git.Repository) (*object.Tag, error) {
 		if latestVersion == nil || v.GreaterThan(latestVersion) {
 			latestVersion = v
 			latestSemanticTag = tagObj
+			foundTag = true
 		}
 
 		return nil
@@ -59,7 +61,7 @@ func GetLatestSemanticTag(repo *git.Repository) (*object.Tag, error) {
 		return nil, fmt.Errorf("error iterating over tags: %w", err)
 	}
 
-	if latestSemanticTag == nil {
+	if !foundTag {
 		return nil, fmt.Errorf("no valid annotated semver tags found")
 	}
 
@@ -67,6 +69,9 @@ func GetLatestSemanticTag(repo *git.Repository) (*object.Tag, error) {
 }
 
 func GetCommitMessagesSinceLastTag(repo *git.Repository, lastTag *object.Tag) ([]string, error) {
+	if lastTag == nil {
+		return nil, fmt.Errorf("no valid tag found. Exiting program")
+	}
 	commit, err := repo.CommitObject(lastTag.Target)
 
 	if err != nil {
