@@ -37,7 +37,11 @@ func getAdditionalConstraints(prompt internal.NotesPrompt) []string {
 	}
 
 	if prompt.ReleaseType != "" {
-		constraints = append(constraints, fmt.Sprintf("This is a %s release. Provide the appropriate next tag number from: %s.", prompt.ReleaseType, prompt.TagName))
+		if prompt.TagName != "Initial Release" && prompt.TagName != "" {
+			constraints = append(constraints, fmt.Sprintf("This is a %s release. Provide the appropriate next semantic version number based on the previous tag: %s.", prompt.ReleaseType, prompt.TagName))
+		} else {
+			constraints = append(constraints, fmt.Sprintf("This is the first release, suggested type is %s. Generate an appropriate initial semantic version (e.g., 0.1.0 for patch/minor, 1.0.0 for major) based on the provided commits.", prompt.ReleaseType))
+		}
 	}
 
 	if prompt.BulletStyle != "" {

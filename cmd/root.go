@@ -1,10 +1,13 @@
 package cmd
 
 import (
+	"bufio"
+	"errors"
 	"fmt"
 	"github.com/furmanp/relaise/internal"
 	"github.com/spf13/pflag"
 	"os"
+	"strings"
 
 	"github.com/atotto/clipboard"
 	"github.com/furmanp/relaise/internal/services"
@@ -68,6 +71,9 @@ var rootCmd = &cobra.Command{
 			}
 		})
 
+		var commitMessages []string
+		var latestTagName string = "Initial Release"
+
 		repoPath, err := os.Getwd()
 		if err != nil {
 			return fmt.Errorf("failed to get current working directory: %w", err)
@@ -78,14 +84,38 @@ var rootCmd = &cobra.Command{
 			return fmt.Errorf("failed to open Git repository: %w", err)
 		}
 
-		commitSummary, err := services.GetReleasePayload(repo)
+		latestTag, err := services.GetLatestSemanticTag(repo)
 
 		if err != nil {
-			return fmt.Errorf("failed to get commit summary: %w", err)
+			if errors.Is(err, services.ErrNoTagsFound) {
+				fmt.Print("No semantic version tags found. Generate release notes from all commits? (y/N): ")
+				reader := bufio.NewReader(os.Stdin)
+				input, _ := reader.ReadString('\n')
+				input = strings.ToLower(strings.TrimSpace(input))
+
+				if input == "y" {
+					fmt.Println("Proceeding with all commits...")
+					commitMessages, err = services.GetAllCommitMessages(repo)
+					if err != nil {
+						return fmt.Errorf("failed to get all commit messages: %w", err)
+					}
+				} else {
+					fmt.Println("Aborted by user.")
+					return nil
+				}
+			} else {
+				return fmt.Errorf("failed to get latest semantic tag: %w", err)
+			}
+		} else {
+			latestTagName = latestTag.Name
+			commitMessages, err = services.GetCommitMessagesSinceLastTag(repo, latestTag)
+			if err != nil {
+				return fmt.Errorf("error getting commit messages since last tag '%s': %w", latestTagName, err)
+			}
 		}
 
-		prompt.TagName = commitSummary.TagName
-		prompt.Context = commitSummary.Messages
+		prompt.TagName = latestTagName
+		prompt.Context = commitMessages
 
 		if len(prompt.Context) == 0 {
 			fmt.Printf("No new commits found since tag %s. No release notes to generate.\n", prompt.TagName)
@@ -93,11 +123,12 @@ var rootCmd = &cobra.Command{
 		}
 
 		releaseNotes, err := services.GeneratePrompt(prompt)
+
 		if err != nil {
 			return fmt.Errorf("failed to generate release notes: %w", err)
 		}
 
-		fmt.Printf("%s\n", releaseNotes)
+		fmt.Print(releaseNotes)
 
 		if prompt.Copy {
 			err := clipboard.WriteAll(releaseNotes)

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"fmt"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/storer"
@@ -11,10 +12,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 )
 
-type ReleasePayload struct {
-	TagName  string
-	Messages []string
-}
+var ErrNoTagsFound = errors.New("no semantic version tags found")
 
 func GetGitRepository(repoPath string) (*git.Repository, error) {
 	repo, err := git.PlainOpen(repoPath)
@@ -62,7 +60,7 @@ func GetLatestSemanticTag(repo *git.Repository) (*object.Tag, error) {
 	}
 
 	if !foundTag {
-		return nil, fmt.Errorf("no valid annotated semver tags found")
+		return nil, ErrNoTagsFound
 	}
 
 	return latestSemanticTag, nil
@@ -113,19 +111,30 @@ func GetCommitMessagesSinceLastTag(repo *git.Repository, lastTag *object.Tag) ([
 	return commitMessages, nil
 }
 
-func GetReleasePayload(repo *git.Repository) (*ReleasePayload, error) {
-	latestTag, err := GetLatestSemanticTag(repo)
+func GetAllCommitMessages(repo *git.Repository) ([]string, error) {
+	head, err := repo.Head()
 	if err != nil {
-		return nil, fmt.Errorf("error getting latest semantic tag: %w", err)
+		return nil, fmt.Errorf("error getting HEAD: %w", err)
 	}
 
-	commitMessages, err := GetCommitMessagesSinceLastTag(repo, latestTag)
+	commitIter, err := repo.Log(&git.LogOptions{Order: git.LogOrderCommitterTime, From: head.Hash()})
 	if err != nil {
-		return nil, fmt.Errorf("error getting commit messages since last tag: %w", err)
+		return nil, fmt.Errorf("error fetching commit log: %w", err)
 	}
 
-	return &ReleasePayload{
-		TagName:  latestTag.Name,
-		Messages: commitMessages,
-	}, nil
+	var commitMessages []string
+	err = commitIter.ForEach(func(c *object.Commit) error {
+		commitMessages = append(commitMessages, c.Message)
+		return nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("error iterating over all commits: %w", err)
+	}
+
+	for i, j := 0, len(commitMessages)-1; i < j; i, j = i+1, j-1 {
+		commitMessages[i], commitMessages[j] = commitMessages[j], commitMessages[i]
+	}
+
+	return commitMessages, nil
 }
