@@ -1,7 +1,6 @@
 # Relaise
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/furmanp/relaise)](https://goreportcard.com/report/github.com/furmanp/relaise)
-![Latest Release](https://img.shields.io/github/v/release/furmanp/relaise)
 
 **AI-Powered Release Notes Generator**
 
